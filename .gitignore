@@ -1,0 +1,46 @@
+# Secrets — NEVER commit
+.env
+.env.local
+.env.*.local
+*.key
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Validation artifacts (regenerated each run)
+validation_results.json
+validation_report.html
+# Keep validation_baseline.json — it's the regression reference
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# macOS resource forks (from zipped sources)
+__MACOSX/
+._*
+
+# Logs
+*.log
+logs/
+
+# Gradio cache + flagged data
+flagged/
+gradio_cached_examples/

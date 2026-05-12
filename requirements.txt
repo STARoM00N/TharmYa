@@ -1,0 +1,4 @@
+gradio>=4.44,<7
+google-generativeai>=0.7,<2
+openai>=1.40,<2
+pytest>=8.0
