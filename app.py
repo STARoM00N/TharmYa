@@ -321,30 +321,170 @@ def pharmathai_chat(
 # ─────────────────────────────────────────────────────────────────────────────
 
 CUSTOM_CSS = """
+/* ── Base typography: increase everything for elder readability ── */
+.gradio-container, .gradio-container * {
+    font-size: 18px !important;
+    line-height: 1.7 !important;
+}
+.gradio-container {
+    max-width: 1280px !important;
+    margin: 0 auto !important;
+}
+
+/* ── Header ── */
 .pharmathai-header {
     text-align: center;
-    padding: 20px;
+    padding: 32px 24px;
     background: linear-gradient(135deg, #0d9488, #059669);
-    border-radius: 12px;
-    margin-bottom: 16px;
+    border-radius: 16px;
+    margin-bottom: 20px;
     color: white;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
 }
-.pharmathai-header h1 { margin: 0; font-size: 28px; }
-.pharmathai-header p { margin: 4px 0 0; opacity: 0.9; font-size: 14px; }
+.pharmathai-header h1 {
+    margin: 0;
+    font-size: 42px !important;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+.pharmathai-header p {
+    margin: 10px 0 0;
+    opacity: 0.95;
+    font-size: 22px !important;
+}
+
+/* ── How-to-use panel ── */
+.how-to-use {
+    background: #ecfdf5;
+    border: 2px solid #10b981;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+    color: #064e3b;
+}
+.how-to-use h3 {
+    margin: 0 0 12px;
+    font-size: 24px !important;
+    color: #047857;
+}
+.how-to-use ol {
+    margin: 0;
+    padding-left: 28px;
+    font-size: 19px !important;
+}
+.how-to-use li { margin: 6px 0; }
+
+/* ── Section title ── */
+.section-title {
+    font-size: 24px !important;
+    font-weight: 700;
+    color: #134e4a;
+    margin: 6px 0 10px;
+}
+
+/* ── Chatbot bubbles bigger ── */
+.gradio-container .message, .gradio-container .message * {
+    font-size: 19px !important;
+    line-height: 1.75 !important;
+}
+
+/* ── Inputs: bigger text and padding ── */
+.gradio-container textarea,
+.gradio-container input[type="text"],
+.gradio-container input[type="number"] {
+    font-size: 20px !important;
+    padding: 14px 16px !important;
+    line-height: 1.5 !important;
+}
+.gradio-container label,
+.gradio-container .label-wrap span {
+    font-size: 19px !important;
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+}
+
+/* ── Buttons: large, high-contrast, easy targets ── */
+.gradio-container button {
+    font-size: 20px !important;
+    padding: 14px 22px !important;
+    min-height: 56px !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+}
+.gradio-container button.primary {
+    background: #059669 !important;
+    color: white !important;
+    box-shadow: 0 3px 8px rgba(5, 150, 105, 0.3);
+}
+.gradio-container button.primary:hover {
+    background: #047857 !important;
+    transform: translateY(-1px);
+}
+
+/* ── Quick-symptom buttons ── */
+.quick-symptoms button {
+    background: #f0fdfa !important;
+    color: #134e4a !important;
+    border: 2px solid #0d9488 !important;
+    font-size: 18px !important;
+    min-height: 52px !important;
+}
+.quick-symptoms button:hover {
+    background: #ccfbf1 !important;
+}
+
+/* ── Disclaimer prominent ── */
 .disclaimer {
-    background: #fef3c7; border-left: 4px solid #f59e0b;
-    padding: 10px 14px; border-radius: 6px; font-size: 13px;
-    color: #92400e; margin-top: 8px;
+    background: #fef3c7;
+    border-left: 6px solid #f59e0b;
+    padding: 16px 20px;
+    border-radius: 10px;
+    font-size: 17px !important;
+    line-height: 1.7 !important;
+    color: #78350f;
+    margin-top: 14px;
+}
+.disclaimer b { color: #92400e; font-size: 19px; }
+
+/* ── Checkbox bigger ── */
+.gradio-container input[type="checkbox"] {
+    width: 22px !important;
+    height: 22px !important;
+    margin-right: 8px !important;
+}
+
+/* ── Accordion title bigger ── */
+.gradio-container .label-wrap button {
+    font-size: 19px !important;
 }
 """
 
-with gr.Blocks(title="PharmaThai AI — ถามก่อนซื้อ ปลอดภัยกว่า") as app:
+with gr.Blocks(
+    title="PharmaThai AI — ถามก่อนซื้อ ปลอดภัยกว่า",
+    theme=gr.themes.Soft(
+        primary_hue="emerald",
+        secondary_hue="teal",
+        font=[gr.themes.GoogleFont("Sarabun"), "ui-sans-serif", "system-ui"],
+    ),
+) as app:
 
     # ── Header ──
     gr.HTML("""
     <div class="pharmathai-header">
         <h1>💊 PharmaThai AI</h1>
-        <p>ถามก่อนซื้อ ปลอดภัยกว่า — ระบบแนะนำยา OTC สำหรับคนไทย</p>
+        <p>ถามก่อนซื้อยา ปลอดภัยกว่า — ผู้ช่วยแนะนำยาสามัญสำหรับคนไทย</p>
+    </div>
+    """)
+
+    # ── How to use (simple steps) ──
+    gr.HTML("""
+    <div class="how-to-use">
+        <h3>📋 วิธีใช้งานง่าย ๆ 3 ขั้นตอน</h3>
+        <ol>
+            <li><b>พิมพ์อาการ</b> ที่กำลังเป็นอยู่ ลงในช่องด้านล่าง (เช่น "ปวดหัว" หรือ "ไอ")</li>
+            <li><b>กดปุ่มสีเขียว "ส่งคำถาม"</b> ทางขวามือ</li>
+            <li><b>รอสักครู่</b> ภูมิจะแนะนำยาที่เหมาะสมให้ครับ</li>
+        </ol>
     </div>
     """)
 
@@ -352,49 +492,76 @@ with gr.Blocks(title="PharmaThai AI — ถามก่อนซื้อ ปล
         # ── Left: Chat ──
         with gr.Column(scale=3):
             chatbot = gr.Chatbot(
-                label="💬 สนทนากับภูมิ — ผู้ช่วยเภสัชกรดิจิทัล",
-                height=520,
+                label="💬 สนทนากับภูมิ — ผู้ช่วยเภสัชกร",
+                height=560,
                 avatar_images=(None, "💊"),
+                show_copy_button=True,
             )
+
+            gr.HTML('<div class="section-title">✍️ พิมพ์อาการของคุณที่นี่</div>')
             with gr.Row():
                 user_input = gr.Textbox(
-                    placeholder="พิมพ์อาการของคุณที่นี่ เช่น 'ปวดหัวมาก ไม่มีไข้'",
+                    placeholder="ตัวอย่าง: ปวดหัวมาก ไม่มีไข้",
                     label="",
                     scale=5,
                     container=False,
+                    lines=2,
                 )
-                send_btn = gr.Button("ส่ง 💬", variant="primary", scale=1)
+                send_btn = gr.Button("ส่งคำถาม ➤", variant="primary", scale=1, size="lg")
 
-            with gr.Accordion("🔬 RAG Retrieval (โปร่งใส — ดูว่าระบบดึงยาอะไรมาให้ AI)", open=False):
+            # Quick-pick common symptoms (one-tap for elders)
+            gr.HTML('<div class="section-title" style="margin-top:14px;">👇 หรือกดเลือกอาการที่พบบ่อย</div>')
+            with gr.Row(elem_classes="quick-symptoms"):
+                quick_headache = gr.Button("🤕 ปวดหัว")
+                quick_fever = gr.Button("🌡️ เป็นไข้")
+                quick_cough = gr.Button("😷 ไอ เจ็บคอ")
+                quick_stomach = gr.Button("🤢 ปวดท้อง")
+                quick_cold = gr.Button("🤧 เป็นหวัด")
+
+            with gr.Accordion("🔬 ดูยาที่ระบบค้นมาให้ AI (สำหรับผู้สนใจรายละเอียด)", open=False):
                 rag_panel = gr.Markdown(
                     "_ยังไม่มีคำถาม — ระบบจะแสดงผลการค้นหาที่นี่เมื่อคุณส่งอาการมา_"
                 )
 
         # ── Right: Patient Profile ──
         with gr.Column(scale=1):
-            gr.Markdown("### 👤 ข้อมูลเพิ่มเติม (ถ้ามี)")
-            age_input = gr.Textbox(label="อายุ (ปี)", placeholder="เช่น 35")
+            gr.HTML('<div class="section-title">👤 ข้อมูลของคุณ (ถ้ามี จะแม่นยำขึ้น)</div>')
+            age_input = gr.Textbox(
+                label="อายุ (ปี)",
+                placeholder="เช่น 65",
+                info="ใส่ตัวเลขอายุของคุณ",
+            )
             meds_input = gr.Textbox(
-                label="ยาที่กินอยู่ปัจจุบัน",
+                label="ยาที่กินอยู่ตอนนี้",
                 placeholder="เช่น Warfarin, Metformin",
-                info="คั่นด้วย comma",
+                info="ถ้ามีหลายตัว ให้คั่นด้วยลูกน้ำ ( , )",
+                lines=2,
             )
             conditions_input = gr.Textbox(
                 label="โรคประจำตัว",
                 placeholder="เช่น เบาหวาน, ความดันสูง",
-                info="คั่นด้วย comma",
+                info="ถ้ามีหลายโรค ให้คั่นด้วยลูกน้ำ ( , )",
+                lines=2,
             )
-            pregnant_input = gr.Checkbox(label="ตั้งครรภ์", value=False)
+            pregnant_input = gr.Checkbox(
+                label="กำลังตั้งครรภ์",
+                value=False,
+                info="ติ๊กถ้ากำลังตั้งครรภ์",
+            )
 
             gr.HTML("""
             <div class="disclaimer">
-                ⚕️ <b>ข้อจำกัดสำคัญ</b><br>
-                PharmaThai AI ให้ข้อมูลเพื่อประกอบการตัดสินใจเท่านั้น<br>
-                <b>ไม่ใช่การวินิจฉัยโรค</b> กรุณาปรึกษาเภสัชกรหรือแพทย์เสมอ
+                ⚕️ <b>ข้อควรทราบ</b><br>
+                PharmaThai AI เป็นเพียง<b>ข้อมูลประกอบ</b>เท่านั้น<br>
+                <b>ไม่ใช่การวินิจฉัยจากแพทย์</b><br>
+                หากอาการรุนแรงหรือไม่ดีขึ้น<br>
+                กรุณา<b>ปรึกษาเภสัชกรหรือแพทย์</b>ทุกครั้ง<br>
+                <br>
+                🚨 เหตุฉุกเฉิน <b>โทร 1669</b>
             </div>
             """)
 
-            clear_btn = gr.Button("🗑️ เริ่มสนทนาใหม่", variant="secondary")
+            clear_btn = gr.Button("🗑️ ล้างและเริ่มใหม่", variant="secondary", size="lg")
 
     # ── Event handlers ──
     chat_inputs = [user_input, chatbot, age_input, meds_input, conditions_input, pregnant_input]
@@ -402,6 +569,14 @@ with gr.Blocks(title="PharmaThai AI — ถามก่อนซื้อ ปล
 
     send_btn.click(fn=pharmathai_chat, inputs=chat_inputs, outputs=chat_outputs)
     user_input.submit(fn=pharmathai_chat, inputs=chat_inputs, outputs=chat_outputs)
+
+    # Quick-symptom buttons: pre-fill the textbox so elders can edit before sending
+    quick_headache.click(fn=lambda: "ปวดหัว", outputs=user_input)
+    quick_fever.click(fn=lambda: "เป็นไข้ ตัวร้อน", outputs=user_input)
+    quick_cough.click(fn=lambda: "ไอ เจ็บคอ", outputs=user_input)
+    quick_stomach.click(fn=lambda: "ปวดท้อง", outputs=user_input)
+    quick_cold.click(fn=lambda: "เป็นหวัด คัดจมูก น้ำมูกไหล", outputs=user_input)
+
     clear_btn.click(
         fn=lambda: ([], "", "_ยังไม่มีคำถาม — ระบบจะแสดงผลการค้นหาที่นี่เมื่อคุณส่งอาการมา_"),
         outputs=[chatbot, user_input, rag_panel],
