@@ -355,7 +355,7 @@ CUSTOM_CSS = """
 
 /* ── How-to-use panel ── */
 .how-to-use {
-    background: #ecfdf5;
+    background: #c7d9d1;
     border: 2px solid #10b981;
     border-radius: 14px;
     padding: 20px 24px;
@@ -372,7 +372,13 @@ CUSTOM_CSS = """
     padding-left: 28px;
     font-size: 19px !important;
 }
-.how-to-use li { margin: 6px 0; }
+.how-to-use li { 
+    margin: 6px 0;
+    color: #047857;
+}
+.how-to-use b{
+    color: #047857;
+}
 
 /* ── Section title ── */
 .section-title {
