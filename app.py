@@ -459,14 +459,13 @@ CUSTOM_CSS = """
 }
 """
 
-with gr.Blocks(
-    title="PharmaThai AI — ถามก่อนซื้อ ปลอดภัยกว่า",
-    theme=gr.themes.Soft(
-        primary_hue="emerald",
-        secondary_hue="teal",
-        font=[gr.themes.GoogleFont("Sarabun"), "ui-sans-serif", "system-ui"],
-    ),
-) as app:
+APP_THEME = gr.themes.Soft(
+    primary_hue="emerald",
+    secondary_hue="teal",
+    font=[gr.themes.GoogleFont("Sarabun"), "ui-sans-serif", "system-ui"],
+)
+
+with gr.Blocks(title="PharmaThai AI — ถามก่อนซื้อ ปลอดภัยกว่า") as app:
 
     # ── Header ──
     gr.HTML("""
@@ -495,7 +494,6 @@ with gr.Blocks(
                 label="💬 สนทนากับภูมิ — ผู้ช่วยเภสัชกร",
                 height=560,
                 avatar_images=(None, "💊"),
-                show_copy_button=True,
             )
 
             gr.HTML('<div class="section-title">✍️ พิมพ์อาการของคุณที่นี่</div>')
@@ -613,4 +611,5 @@ if __name__ == "__main__":
         server_port=7860,
         share=False,       # เปลี่ยนเป็น True ถ้าจะ demo online
         css=CUSTOM_CSS,
+        theme=APP_THEME,
     )
