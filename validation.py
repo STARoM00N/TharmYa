@@ -25,6 +25,14 @@ import re
 import time
 import unicodedata
 
+# Load .env into os.environ BEFORE any env reads (GEMINI_API_KEY, OPENAI_*, etc.).
+# Silently no-ops if dotenv isn't installed or .env doesn't exist.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 try:
     import google.generativeai as genai
     HAS_GENAI = True
@@ -410,25 +418,28 @@ def run_pre_check_tests():
     return results
 
 
-def _select_subset(n: int) -> list:
+def _select_subset(n: int, exclude_ids: set = None) -> list:
     """
     Stratified sample: 1 from each category first, then fill the rest.
     Ensures coverage even with tiny budgets (e.g. n=6 hits all 6 categories).
+    exclude_ids: IDs already completed (used by --resume) so we don't re-run them.
     """
-    if n >= len(TEST_CASES):
-        return TEST_CASES
+    exclude_ids = exclude_ids or set()
+    pool = [tc for tc in TEST_CASES if tc["id"] not in exclude_ids]
+    if n >= len(pool):
+        return pool
 
     by_cat = {}
-    for tc in TEST_CASES:
+    for tc in pool:
         by_cat.setdefault(tc["category"], []).append(tc)
 
     selected = [cases[0] for cases in by_cat.values()]  # 1 per category
-    remaining = [tc for tc in TEST_CASES if tc not in selected]
+    remaining = [tc for tc in pool if tc not in selected]
     selected.extend(remaining[: max(0, n - len(selected))])
     return selected[:n]
 
 
-def run_llm_tests(api_key: str = None, subset: int = 0):
+def run_llm_tests(api_key: str = None, subset: int = 0, resume: bool = False):
     """
     ทดสอบ LLM response ครบ 30 cases
     รองรับทั้ง Gemini และ OpenAI — auto-detect จาก env var
@@ -437,6 +448,9 @@ def run_llm_tests(api_key: str = None, subset: int = 0):
       export GEMINI_API_KEY='your-key' && python3 validation.py --full
     วิธีใช้ OpenAI:
       export AI_PROVIDER=openai && export OPENAI_API_KEY='your-key' && python3 validation.py --full
+
+    resume: if True, load validation_results.json and skip cases already done
+            (errored cases are NOT considered done — they get retried).
     """
     # ── Detect provider (logic เดียวกับ app.py) ──
     ai_provider = os.environ.get("AI_PROVIDER", "").lower()
@@ -546,10 +560,34 @@ def run_llm_tests(api_key: str = None, subset: int = 0):
                 time.sleep(wait)
         return None, "max retries exceeded"
 
-    cases_to_run = _select_subset(subset) if subset else TEST_CASES
+    # ── Resume: load prior results, skip IDs already done (errored ones retry) ──
+    prior_results = _load_prior_results() if resume else {}
+    done_ids = {rid for rid, r in prior_results.items() if not r.get("error", False)}
+
+    if subset:
+        cases_to_run = _select_subset(subset, exclude_ids=done_ids)
+    elif resume:
+        cases_to_run = [tc for tc in TEST_CASES if tc["id"] not in done_ids]
+    else:
+        cases_to_run = TEST_CASES
+
+    if resume and done_ids:
+        print(f"📦 Resume: skipping {len(done_ids)} already-done case(s) — "
+              f"will run {len(cases_to_run)} more (errored cases will retry)")
     if subset:
         cats = sorted({tc["category"] for tc in cases_to_run})
         print(f"📋 Subset mode: running {len(cases_to_run)}/{len(TEST_CASES)} cases — categories: {', '.join(cats)}")
+
+    if not cases_to_run:
+        print("✅ Nothing to do — all cases already completed. Re-rendering report from existing results.")
+        merged = list(prior_results.values())
+        merged.sort(key=lambda r: _TC_ORDER.get(r["id"], 9999))
+        print_summary(merged)
+        serialized = save_results(merged, model_name=f"{ai_provider}/{model_name}")
+        regression = compute_regression(serialized)
+        render_html_report(serialized, regression)
+        print_regression(regression)
+        return merged
 
     results = []
     error_count = 0
@@ -646,7 +684,7 @@ def run_llm_tests(api_key: str = None, subset: int = 0):
         # so a noisy free-tier provider settles into a sustainable cadence.
         # Override entirely with VALIDATION_SLEEP=N (paid tier: 1; free tier: leave default).
         is_openrouter = "openrouter" in (os.environ.get("OPENAI_BASE_URL") or "").lower()
-        base = float(os.environ.get("VALIDATION_SLEEP", "10" if is_openrouter else "2"))
+        base = float(os.environ.get("VALIDATION_SLEEP", "20" if is_openrouter else "2"))
         adapted = min(base * (2 ** rate_limit_hits), 60.0)
         if rate_limit_hits and adapted != base:
             print(f"    💤 throttle: sleeping {adapted:.0f}s (after {rate_limit_hits} rate-limit hits)")
@@ -660,13 +698,21 @@ def run_llm_tests(api_key: str = None, subset: int = 0):
         print(f"    Or switch to OpenAI:")
         print(f"      export AI_PROVIDER=openai && export OPENAI_API_KEY=...")
 
+    # ── Merge with prior results (resume mode) so summary/report show the full picture ──
+    if prior_results:
+        new_ids = {r["id"] for r in results}
+        merged = results + [prior_results[rid] for rid in prior_results if rid not in new_ids]
+        merged.sort(key=lambda r: _TC_ORDER.get(r["id"], 9999))
+    else:
+        merged = results
+
     # ── Summary + reports ──
-    print_summary(results)
-    serialized = save_results(results, model_name=f"{ai_provider}/{model_name}")
+    print_summary(merged)
+    serialized = save_results(merged, model_name=f"{ai_provider}/{model_name}")
     regression = compute_regression(serialized)
     render_html_report(serialized, regression)
     print_regression(regression)
-    return results
+    return merged
 
 
 def print_regression(regression: dict):
@@ -949,6 +995,51 @@ def print_summary(results: list):
 RESULTS_PATH = "validation_results.json"
 BASELINE_PATH = "validation_baseline.json"
 REPORT_PATH = "validation_report.html"
+
+# Stable ordering of test cases by ID — used when merging resumed runs so the
+# saved JSON / HTML report stays in the original TC01…TC30 order regardless of
+# which subset was run when.
+_TC_ORDER = {tc["id"]: i for i, tc in enumerate(TEST_CASES)}
+
+
+def _load_prior_results() -> dict:
+    """
+    Load validation_results.json into the same in-memory shape that run_llm_tests
+    produces (TC fields + score fields merged), keyed by TC id.
+    Returns {} if the file is missing/corrupt. IDs that no longer exist in
+    TEST_CASES are dropped silently (test set may have changed between runs).
+    """
+    if not os.path.exists(RESULTS_PATH):
+        return {}
+    try:
+        with open(RESULTS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return {}
+    tc_by_id = {tc["id"]: tc for tc in TEST_CASES}
+    prior = {}
+    for r in data.get("results", []):
+        tc = tc_by_id.get(r.get("id"))
+        if not tc:
+            continue
+        reply = r.get("reply", "")
+        prior[tc["id"]] = {
+            **tc,
+            "reply": reply,
+            "accuracy_score": r.get("accuracy", 0.0),
+            "drugs_found": r.get("drugs_found", []),
+            "drugs_missing": r.get("drugs_missing", []),
+            "safety_pass": r.get("safety_pass", False),
+            "safety_violations": r.get("safety_violations", []),
+            "checkpoints_met": r.get("checkpoints_met", 0),
+            "checkpoints_total": r.get("checkpoints_total", 0),
+            "checkpoint_details": r.get("checkpoint_details", []),
+            "overall_pass": r.get("overall_pass", False),
+            # Errored runs are retried on --resume; detect from the saved reply
+            # since the JSON schema doesn't carry the "error" flag separately.
+            "error": str(reply).startswith("[ERROR]"),
+        }
+    return prior
 
 
 def _normalize_base_url(url: str) -> str:
@@ -1293,12 +1384,14 @@ if __name__ == "__main__":
                 print(f"❌ --subset expects an integer, got {sys.argv[i+1]!r}")
                 sys.exit(1)
 
+    resume = "--resume" in sys.argv
+
     if "--full" in sys.argv or subset:
         run_pre_check_tests()
         print()
         run_rag_tests()
         print()
-        run_llm_tests(subset=subset)
+        run_llm_tests(subset=subset, resume=resume)
         print(f"\n📁 Artifacts: {RESULTS_PATH}, {REPORT_PATH}")
     else:
         run_pre_check_tests()
@@ -1307,7 +1400,10 @@ if __name__ == "__main__":
         print("\n💡 Next steps:")
         print("   --full              : run all 30 LLM cases (needs API key)")
         print("   --subset N          : run only N cases, stratified by category (good for free-tier limits)")
+        print("   --resume            : skip cases already in validation_results.json, append new ones")
         print("   --promote-baseline  : freeze validation_results.json as the comparison baseline")
         print("\n   Examples:")
-        print("     python3 validation.py --subset 6     # ~1 per category, ~1 min on a free model")
-        print("     python3 validation.py --full         # all 30, ~5-10 min")
+        print("     python3 validation.py --subset 6              # ~1 per category, ~1 min on a free model")
+        print("     python3 validation.py --full                  # all 30, ~5-10 min")
+        print("     python3 validation.py --full --resume         # continue after a rate-limited run")
+        print("     python3 validation.py --subset 10 --resume    # do 10 more not-yet-done cases")

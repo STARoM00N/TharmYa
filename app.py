@@ -1,6 +1,6 @@
 """
 =============================================================================
-PharmaThai AI — Gradio Web Application
+TharmYa AI — Gradio Web Application
 CS460 Artificial Intelligence | Final Project
 =============================================================================
 รองรับทั้ง Google Gemini และ OpenAI GPT — เลือกผ่าน Environment Variable
@@ -21,6 +21,15 @@ import gradio as gr
 import logging
 import os
 from typing import Iterator
+
+# Load .env into os.environ BEFORE any env reads below (GEMINI_API_KEY, etc.).
+# Silently no-ops if dotenv isn't installed or .env doesn't exist.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from prompt_engine import (
     get_rag_prompt_package,
     pre_check_input,
@@ -53,7 +62,7 @@ if not AI_PROVIDER:
 
 # Model names — เปลี่ยนได้ตรงนี้
 GEMINI_MODEL = "gemini-2.5-flash"       # หรือ gemini-1.5-pro, gemini-2.0-flash-lite
-OPENAI_MODEL = "gpt-4o-mini"            # หรือ gpt-4o, gpt-4.1-mini, gpt-4.1-nano
+OPENAI_MODEL = "google/gemma-4-31b-it:free"            # หรือ gpt-4o, gpt-4.1-mini, gpt-4.1-nano
 
 # ─────────────────────────────────────────────────────────────────────────────
 # INIT: Load knowledge base + system prompt + RAG engine
@@ -252,7 +261,7 @@ def pharmathai_chat(
 
     if check["status"] == "OUT_OF_SCOPE":
         reply = (
-            "ขออภัยนะครับ ผม (ภูมิ) ช่วยได้เฉพาะเรื่องยา OTC "
+            "ขออภัยนะครับ ผม (ถามยา) ช่วยได้เฉพาะเรื่องยา OTC "
             "และสุขภาพเบื้องต้นเท่านั้นครับ\n\n"
             "มีอาการอะไรที่อยากปรึกษาเรื่องยาไหมครับ? 🙏"
         )
@@ -463,6 +472,20 @@ CUSTOM_CSS = """
 .gradio-container .label-wrap button {
     font-size: 19px !important;
 }
+
+/* ── Hide built-in chatbot toolbar buttons (share/copy/clear) — duplicated elsewhere ── */
+#pharmathai-chatbot button[aria-label="Share"],
+#pharmathai-chatbot button[aria-label="Copy"],
+#pharmathai-chatbot button[aria-label="Copy conversation"],
+#pharmathai-chatbot button[aria-label="Clear"],
+#pharmathai-chatbot button[aria-label="Clear chat"],
+#pharmathai-chatbot button[title="Share"],
+#pharmathai-chatbot button[title="Copy"],
+#pharmathai-chatbot button[title="Clear"],
+#pharmathai-chatbot .icon-buttons,
+#pharmathai-chatbot .toolbar {
+    display: none !important;
+}
 """
 
 APP_THEME = gr.themes.Soft(
@@ -471,12 +494,12 @@ APP_THEME = gr.themes.Soft(
     font=[gr.themes.GoogleFont("Sarabun"), "ui-sans-serif", "system-ui"],
 )
 
-with gr.Blocks(title="PharmaThai AI — ถามก่อนซื้อ ปลอดภัยกว่า") as app:
+with gr.Blocks(title="TharmYa AI — ถามก่อนซื้อ ปลอดภัยกว่า") as app:
 
     # ── Header ──
     gr.HTML("""
     <div class="pharmathai-header">
-        <h1>💊 PharmaThai AI</h1>
+        <h1>💊 TharmYa AI</h1>
         <p>ถามก่อนซื้อยา ปลอดภัยกว่า — ผู้ช่วยแนะนำยาสามัญสำหรับคนไทย</p>
     </div>
     """)
@@ -488,7 +511,7 @@ with gr.Blocks(title="PharmaThai AI — ถามก่อนซื้อ ปล
         <ol>
             <li><b>พิมพ์อาการ</b> ที่กำลังเป็นอยู่ ลงในช่องด้านล่าง (เช่น "ปวดหัว" หรือ "ไอ")</li>
             <li><b>กดปุ่มสีเขียว "ส่งคำถาม"</b> ทางขวามือ</li>
-            <li><b>รอสักครู่</b> ภูมิจะแนะนำยาที่เหมาะสมให้ครับ</li>
+            <li><b>รอสักครู่</b> ถามยาจะแนะนำยาที่เหมาะสมให้ครับ</li>
         </ol>
     </div>
     """)
@@ -497,9 +520,11 @@ with gr.Blocks(title="PharmaThai AI — ถามก่อนซื้อ ปล
         # ── Left: Chat ──
         with gr.Column(scale=3):
             chatbot = gr.Chatbot(
-                label="💬 สนทนากับภูมิ — ผู้ช่วยเภสัชกร",
+                label="💬 สนทนากับถามยา — ผู้ช่วยเภสัชกร",
                 height=560,
                 avatar_images=(None, "💊"),
+                buttons=[],
+                elem_id="pharmathai-chatbot",
             )
 
             gr.HTML('<div class="section-title">✍️ พิมพ์อาการของคุณที่นี่</div>')
@@ -556,7 +581,7 @@ with gr.Blocks(title="PharmaThai AI — ถามก่อนซื้อ ปล
             gr.HTML("""
             <div class="disclaimer">
                 ⚕️ <b>ข้อควรทราบ</b><br>
-                PharmaThai AI เป็นเพียง<b>ข้อมูลประกอบ</b>เท่านั้น<br>
+                TharmYa AI เป็นเพียง<b>ข้อมูลประกอบ</b>เท่านั้น<br>
                 <b>ไม่ใช่การวินิจฉัยจากแพทย์</b><br>
                 หากอาการรุนแรงหรือไม่ดีขึ้น<br>
                 กรุณา<b>ปรึกษาเภสัชกรหรือแพทย์</b>ทุกครั้ง<br>
@@ -597,7 +622,7 @@ if __name__ == "__main__":
     key_set = bool(OPENAI_KEY) if AI_PROVIDER == "openai" else bool(GEMINI_KEY)
 
     print("=" * 50)
-    print("PharmaThai AI — Starting Gradio Web App")
+    print("TharmYa AI — Starting Gradio Web App")
     print(f"AI Provider : {provider_display}")
     print(f"Model       : {model_display}")
     print(f"API Key     : {'✅ Set' if key_set else '❌ NOT SET'}")
