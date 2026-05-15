@@ -62,7 +62,7 @@ if not AI_PROVIDER:
 
 # Model names — เปลี่ยนได้ตรงนี้
 GEMINI_MODEL = "gemini-2.5-flash"       # หรือ gemini-1.5-pro, gemini-2.0-flash-lite
-OPENAI_MODEL = "google/gemma-4-31b-it:free"            # หรือ gpt-4o, gpt-4.1-mini, gpt-4.1-nano
+OPENAI_MODEL = "gemma4:31b-cloud"           # หรือ gpt-4o, gpt-4.1-mini, gpt-4.1-nano
 
 # ─────────────────────────────────────────────────────────────────────────────
 # INIT: Load knowledge base + system prompt + RAG engine

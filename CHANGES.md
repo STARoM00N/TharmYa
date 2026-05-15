@@ -2,6 +2,60 @@
 
 ---
 
+## 🆕 Session 2026-05-15 — Drug Database Expansion (v1.0 → v2.0)
+
+### 💊 `thai_otc_drugs.json` — ขยายจาก 25 → 52 รายการ
+
+เพิ่มข้อมูลยา **27 รายการใหม่** (OTC026 – OTC052) ดึงจากแหล่งทางการ:
+- **ประกาศกระทรวงสาธารณสุข เรื่อง ยาสามัญประจำบ้านแผนปัจจุบัน (ฉบับที่ ๓) พ.ศ. ๒๕๕๐** — รายการ 52 รายการ
+- Cross-check กับ NLEM 2026 (WHO) สำหรับขนาดยาและข้อบ่งใช้
+- ชื่อการค้าและช่วงราคาจาก MIMS Thailand + ข้อมูลตลาดร้านขายยา
+
+**กลุ่มยาใหม่ที่ครอบคลุม:**
+| กลุ่ม | ยาเพิ่ม |
+|---|---|
+| ยาถ่ายพยาธิ | Mebendazole (OTC026) |
+| ยาแก้เมารถ | Dimenhydrinate (OTC027) |
+| ยารักษาโรคตา | Sulfacetamide drops, Saline eye wash (OTC028–029) |
+| ยาโรคปาก/คอ | ยากวาดคอ Povidone-iodine, Gentian Violet, ยาแก้ปวดฟัน Clove Oil, Strepsils-style lozenge, ยาอมสมุนไพร (OTC030–033, 049) |
+| ยาดม/วิงเวียน | ยาทาระเหย Vicks-style, เหล้าแอมโมเนียหอม, ยาดมเมนทอล (OTC035–037) |
+| ยาหม่อง/บรรเทาปวด | ยาหม่อง, พลาสเตอร์บรรเทาปวด (OTC038, 048) |
+| ยารักษาแผล | Silver Sulfadiazine cream สำหรับแผลไฟไหม้ (OTC034) |
+| ยารักษาโรคผิวหนัง | Benzyl Benzoate, Sulfur ointment, Whitfield's, Coal Tar, Calamine, Sodium Thiosulfate (OTC039–041, 050–052) |
+| วิตามิน/อาหารเสริม | B-complex, Multivitamin, Ferrous Sulfate, Cod Liver Oil (OTC042–045) |
+| ยาเด็ก/ทารก | ทิงเจอร์มหาหิงคุ์, ยาเหน็บทวารกลีเซอรีน (OTC046–047) |
+
+**Schema ขยาย:**
+- `metadata.version`: `"1.0"` → **`"2.0"`**
+- `metadata.total_drugs`: 25 → **52**
+- `metadata.categories`: 6 → **16** กลุ่ม
+- `metadata.last_updated`: เพิ่มฟิลด์ใหม่ (`"2026-05-15"`)
+- `metadata.primary_source`: เพิ่มฟิลด์ใหม่ (อ้างประกาศ สธ.)
+- `symptom_to_drug_mapping`: เพิ่มประมาณ 50 อาการใหม่ (เมารถ, แผลไฟไหม้, หิด, เหา, กลาก, เกลื้อน, ฯลฯ)
+- RAG TF-IDF index ขยาย: ~700 → **1,224 terms**
+
+### 📚 ไฟล์ใหม่ `SOURCES.md`
+
+เอกสาร citation สำหรับฐานข้อมูลยา ประกอบด้วย:
+1. แหล่งข้อมูลหลัก 5 ลำดับ (อย./ราชกิจจานุเบกษา/WHO NLEM/TMT/MIMS)
+2. ตาราง mapping ฟิลด์ JSON ↔ คอลัมน์ในประกาศ สธ.
+3. ตารางรายการที่เพิ่ม OTC026–OTC052 พร้อมเลข reference ในประกาศ
+4. รายการที่ "ไม่เพิ่ม" + เหตุผล (เพื่อความโปร่งใส)
+5. Disclaimer, Roadmap (TMT code integration), License
+
+### 🔒 Backup
+
+- ไฟล์เดิมเก็บไว้ที่ `thai_otc_drugs.json.bak` — rollback ได้ถ้าจำเป็น
+
+### ✅ Verified
+
+- JSON schema check ผ่านทุก entry (ครบ 13 fields ตามโครงสร้างเดิม)
+- `prompt_engine.get_rag_prompt_package()` โหลด 52 ยาได้ปกติ
+- `PharmathaiRAG` build TF-IDF index สำเร็จ (1,224 terms)
+- Spot test query: `ปวดฟัน` → OTC001+OTC032, `เมารถ` → OTC027+OTC037, `เป็นลม` → OTC036+OTC037
+
+---
+
 ## 🆕 Session 2026-05 — UX/UI Overhaul + Validation Resume
 
 ### 🎨 `app.py` — UI สำหรับผู้สูงอายุ
