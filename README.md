@@ -8,7 +8,7 @@ CS460 Artificial Intelligence | Final Project
 
 ## ✨ เด่นอะไร
 
-- **🎯 RAG (Retrieval-Augmented Generation)** — TF-IDF index บนฐานข้อมูลยา 25 ตัว → ดึงเฉพาะยาที่ตรงอาการให้ LLM พิจารณา (ลด token + ลด hallucination)
+- **🎯 RAG (Retrieval-Augmented Generation)** — TF-IDF index บนฐานข้อมูลยา **52 ตัว** ที่อิงรายการยาสามัญประจำบ้านทางการของกระทรวงสาธารณสุข → ดึงเฉพาะยาที่ตรงอาการให้ LLM พิจารณา (ลด token + ลด hallucination) ดู [SOURCES.md](./SOURCES.md) สำหรับแหล่งอ้างอิง
 - **🛡️ Safety Guardrails** — pre-check ก่อนถึง LLM: เคสฉุกเฉิน (`เจ็บหน้าอก`, `หายใจไม่ออก`) ตัด short-circuit เรียก 1669 / คำถามนอกขอบเขต / ยาที่ต้องสั่งโดยแพทย์
 - **🔄 Multi-Provider** — รองรับ Gemini, OpenAI, OpenRouter, Groq, Cerebras, Ollama (local) — สลับด้วย env vars ไม่ต้องแก้ code
 - **🧓 UI สำหรับผู้สูงอายุ** — font ใหญ่, ปุ่มใหญ่, quick-pick symptoms, ฟอนต์ Sarabun, contrast สูง
@@ -92,12 +92,14 @@ TharmYa/
 ├── prompt_engine.py            # System prompt + safety pre-check
 ├── rag_engine.py               # TF-IDF retrieval + interaction checker
 ├── validation.py               # 30 test cases + evaluator + HTML report
-├── thai_otc_drugs.json         # Drug knowledge base (25 ยา + red flags)
+├── thai_otc_drugs.json         # Drug knowledge base (52 ยา + red flags, v2.0)
+├── thai_otc_drugs.json.bak     # Backup of v1.0 (25 ยา)
 ├── requirements.txt
 ├── .env.example                # Template (ไม่มี secret)
 ├── .gitignore                  # กัน .env / artifacts ติด git
 ├── README.md                   # ไฟล์นี้
 ├── USAGE.md                    # คู่มือใช้งานเต็ม
+├── SOURCES.md                  # แหล่งอ้างอิงของฐานข้อมูลยา
 ├── CHANGES.md                  # changelog
 └── tests/
     ├── test_pre_check.py
@@ -151,3 +153,5 @@ TharmYa AI เป็น**ข้อมูลประกอบการตัด�
 ## 📄 License
 
 โปรเจกต์การศึกษา — ใช้เพื่อการเรียนการสอน CS460 เท่านั้น
+
+**Data sources**: ข้อมูลยาใน `thai_otc_drugs.json` มาจาก ประกาศกระทรวงสาธารณสุข เรื่อง ยาสามัญประจำบ้านแผนปัจจุบัน + NLEM 2026 + TMT — รายละเอียดและ citation ครบใน [SOURCES.md](./SOURCES.md)
